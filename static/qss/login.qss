@@ -1,0 +1,71 @@
+#login_frame
+{
+    background-color: #0f0f0f;    
+}
+
+#title_frame
+{
+    background-color: none;
+}
+
+#content_frame
+{
+    background-color: none;
+}
+
+#footer_frame
+{
+    background-color: none;
+}
+
+#title_content
+{
+    background-color: none;
+}
+
+#titleLabel
+{
+    color: rgb(255, 255, 255);
+    font: 87 16pt \"Arial Black\";
+}
+
+#closeBtn
+{
+    color: rgb(255, 255, 255);
+    border-radius:5px;
+    background-color: rgb(0, 85, 255);
+    padding-bottom:3px;
+}
+
+#usernameEntry
+{
+    border-radius:10px;
+    padding-left:10px;
+}
+
+#passwordEntry
+{
+    border-radius:10px;
+    padding-left:10px;
+}
+
+#rememberMe
+{
+    color: rgb(255, 255, 255);
+}
+
+#login
+{
+    color: rgb(255, 255, 255);
+    border-radius:5px;
+    text-transform: capitalise ;
+    background-color: rgb(28, 70, 255);
+}
+
+#signup
+{
+    color: rgb(255, 255, 255);
+    border-radius:5px;
+    text-transform: capitalise ;
+    background-color: rgb(28, 70, 255);
+}
