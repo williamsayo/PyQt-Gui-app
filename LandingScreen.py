@@ -1,8 +1,9 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QLineEdit, QMainWindow
+from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QDesktopServices as browser
+import qtawesome as qta
 import os
-
 
 static = os.path.join(os.path.split(__file__)[0],'static')
 
@@ -123,7 +124,6 @@ class LandingWindow(QtWidgets.QMainWindow):
         self.label.setText(_translate("MainWindow", "Loading..."))
 
 
-
 class LoginWindow(QMainWindow):
     def __init__(self):
         super(LoginWindow,self).__init__()
@@ -189,17 +189,20 @@ class LoginWindow(QMainWindow):
         self.content_frame.setObjectName("content_frame")
 
         self.usernameEntry = QtWidgets.QLineEdit(self.content_frame)
+        self.usernameEntry.addAction(qta.icon("fa5.user-circle"),QLineEdit.TrailingPosition)
         self.usernameEntry.setGeometry(QtCore.QRect(25, 30, 350, 35))
         font = QtGui.QFont()
-        font.setFamily("Georgia")
-        font.setPointSize(10)
+        font.setFamily("Rockwell condensed")
+        font.setPointSize(12)
         self.usernameEntry.setFont(font)
         self.usernameEntry.setObjectName("usernameEntry")
+
         self.passwordEntry = QtWidgets.QLineEdit(self.content_frame)
+        self.passwordEntry.addAction(qta.icon("mdi.account-lock-outline"),QLineEdit.TrailingPosition)
         self.passwordEntry.setGeometry(QtCore.QRect(25, 90, 350, 35))
         font = QtGui.QFont()
-        font.setFamily("Georgia")
-        font.setPointSize(10)
+        font.setFamily("Rockwell condensed")
+        font.setPointSize(12)
         self.passwordEntry.setFont(font)
         self.passwordEntry.setEchoMode(QtWidgets.QLineEdit.Password)
         self.passwordEntry.setObjectName("passwordEntry")
@@ -223,6 +226,8 @@ class LoginWindow(QMainWindow):
         self.footer_frame.setObjectName("footer_frame")
 
         self.login = QtWidgets.QPushButton(self.footer_frame)
+        options = [{'scale-factor':1.5,'color':'#fff','color_active':'black'}]
+        self.login.setIcon(qta.icon("mdi.login",options=options))
         self.login.setGeometry(QtCore.QRect(275, 0, 100, 30))
         font = QtGui.QFont()
         font.setFamily("Arial Narrow")
@@ -235,7 +240,8 @@ class LoginWindow(QMainWindow):
         self.login.setObjectName("login")
 
         self.signup = QtWidgets.QPushButton(self.footer_frame)
-        self.signup.setGeometry(QtCore.QRect(135, 0, 130, 30))
+        self.signup.setIcon(qta.icon("fa.user-plus",options=options))
+        self.signup.setGeometry(QtCore.QRect(130, 0, 135, 30))
         font = QtGui.QFont()
         font.setFamily("Arial Narrow")
         font.setPointSize(10)

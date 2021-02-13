@@ -1,6 +1,6 @@
 #body
 {
-    background-image: url(./static/images/Abract.png);
+    background-image: url("C:/Users/willi/Desktop/projects/MainLogin/static/images/Abract.png");
     background-color: rgb(17, 17, 17);
 }
 
@@ -10,6 +10,10 @@
     color: rgb(255, 255, 255);
 }
 
+#ProgressBar
+{
+    border: 1px solid grey;
+}
 
 #progressBar::chunk
 {
