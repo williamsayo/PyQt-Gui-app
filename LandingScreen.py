@@ -81,8 +81,8 @@ class LandingWindow(QtWidgets.QMainWindow):
 
         self.shadow = QtWidgets.QGraphicsDropShadowEffect(self)
         self.shadow.setBlurRadius(20)
-        self.shadow.setXOffset(0)
-        self.shadow.setYOffset(0)
+        self.shadow.setXOffset(2)
+        self.shadow.setYOffset(2)
         self.shadow.setColor(QtGui.QColor(0,0,0,60))
         self.body.setGraphicsEffect(self.shadow)
 
@@ -93,7 +93,7 @@ class LandingWindow(QtWidgets.QMainWindow):
         self.timer.timeout.connect(self.progress)
 
         # timer in ms
-        self.timer.start(25)
+        self.timer.start(15)
 
         self.retranslateUi(self)
         QtCore.QMetaObject.connectSlotsByName(self)
@@ -177,7 +177,7 @@ class LoginWindow(QMainWindow):
         font.setWeight(75)
         self.closeBtn.setFont(font)
         self.closeBtn.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.closeBtn.clicked.connect(self.closeTab)
+        self.closeBtn.clicked.connect(lambda: self.close())
         self.closeBtn.setIconSize(QtCore.QSize(16, 16))
         self.closeBtn.setObjectName("closeBtn")
 
@@ -196,6 +196,7 @@ class LoginWindow(QMainWindow):
         font.setPointSize(12)
         self.usernameEntry.setFont(font)
         self.usernameEntry.setObjectName("usernameEntry")
+        self.usernameEntry.setMaxLength(20)
 
         self.passwordEntry = QtWidgets.QLineEdit(self.content_frame)
         self.passwordEntry.addAction(qta.icon("mdi.account-lock-outline"),QLineEdit.TrailingPosition)
@@ -206,6 +207,7 @@ class LoginWindow(QMainWindow):
         self.passwordEntry.setFont(font)
         self.passwordEntry.setEchoMode(QtWidgets.QLineEdit.Password)
         self.passwordEntry.setObjectName("passwordEntry")
+        self.passwordEntry.setMaxLength(20)
 
         self.rememberMe = QtWidgets.QCheckBox(self.content_frame)
         self.rememberMe.setGeometry(QtCore.QRect(30, 140, 110, 16))
@@ -254,7 +256,7 @@ class LoginWindow(QMainWindow):
         self.signup.setObjectName("signup")
 
         self.sociaIs_frame = QtWidgets.QFrame(self.footer_frame)
-        self.sociaIs_frame.setGeometry(QtCore.QRect(225, 120, 150, 45))
+        self.sociaIs_frame.setGeometry(QtCore.QRect(225, 120, 138, 45))
         self.sociaIs_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.sociaIs_frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.sociaIs_frame.setObjectName("sociaIs_frame")
@@ -293,7 +295,6 @@ class LoginWindow(QMainWindow):
 
         self.twitter = QtWidgets.QLabel(self.sociaIs_frame)
         self.twitter.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.twitter.setText("")
         self.twitter.setPixmap(QtGui.QPixmap(os.path.join(static,"images/1491579542-yumminkysocialmedia22_83078.png")))
         self.twitter.setScaledContents(True)
         self.twitter.setObjectName("twitter")
@@ -307,6 +308,7 @@ class LoginWindow(QMainWindow):
 
         self.retranslateUi(self)
         QtCore.QMetaObject.connectSlotsByName(self)
+
         with open(os.path.join(static,'qss/login.qss'),'r') as stylesheet:
             self.setStyleSheet(stylesheet.read())
         self.show()
@@ -320,6 +322,15 @@ class LoginWindow(QMainWindow):
     def openTwitter(self, event):
             browser.openUrl(QtCore.QUrl("https://www.twitter.com"))
 
+
+    def mousePressEvent(self, event):
+        self.initPosition = event.globalPos()
+
+    def mouseMoveEvent(self, event):
+        delta = QtCore.QPoint(event.globalPos() - self.initPosition)
+        self.move(self.pos().x() + delta.x() , self.pos().y() + delta.y())
+        self.initPosition = event.globalPos()
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
@@ -330,10 +341,6 @@ class LoginWindow(QMainWindow):
         self.rememberMe.setText(_translate("MainWindow", "Remember Me"))
         self.login.setText(_translate("MainWindow", "LogIn"))
         self.signup.setText(_translate("MainWindow", "Create New Account "))
-
-    def closeTab(self, event):
-        self.close()
-
 
 if __name__ == "__main__":
     import sys

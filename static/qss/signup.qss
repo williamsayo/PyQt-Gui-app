@@ -1,0 +1,82 @@
+#signUp
+{
+    background-color:#fff;
+    border-radius:10px;
+}
+
+#facebook
+{
+    color: rgb(255, 255, 255);
+    background-color: rgb(255, 255, 255);
+    border-radius: 10px;
+}
+
+#instagram
+{
+    color: rgb(255, 255, 255);
+    background-color: rgb(255, 255, 255);
+    border-radius: 10px;
+}
+
+#twitter
+{
+    color: rgb(255, 255, 255);
+    background-color: rgb(255, 255, 255);
+    border-radius: 10px;
+}
+
+#other_details_label
+{
+    padding-left: 20px;
+    color: rgb(188, 188, 188);
+}
+
+#minimize_btn
+{
+    border-radius: 7px;
+    background-color: #ffbd44;
+}
+
+#minimize_btn:hover
+{
+    background-color: rgb(255, 255, 0);
+}
+
+#close_btn
+{
+    border-radius: 7px;
+    background-color: #ff605c;
+}
+
+#close_btn:hover
+{
+    background-color: rgb(255, 0, 0);
+}
+
+QLineEdit
+{
+    border: 1px solid #e3e3e3;
+    color: #2c2c2c;
+    border-radius: 15px;
+    padding-left: 10px;
+    padding-right: 10px;
+    /* font-family: Montserrat,Helvetica Neue,Arial,sans-serif; */
+}
+
+QLineEdit:focus
+{
+    border-color: #f96332;
+}
+
+#register_btn
+{
+    background-color: #f96332;
+    color: rgb(255, 255, 255);
+    border: none;
+    border-radius: 15px;
+}
+
+#register_btn:hover
+{
+    background-color: rgba(249,99,50,0.9);
+}
