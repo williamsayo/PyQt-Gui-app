@@ -69,6 +69,7 @@
     border-radius:5px;
     text-transform: capitalise ;
     background-color: rgb(28, 70, 255);
+    border: none;
 }
 
 #signup
@@ -77,6 +78,9 @@
     border-radius:5px;
     text-transform: capitalise ;
     background-color: rgb(28, 70, 255);
+    border: none;
+}
+
 }
 
 #login:hover

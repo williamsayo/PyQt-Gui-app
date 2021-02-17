@@ -1,25 +1,13 @@
+from sqlite3.dbapi2 import OperationalError
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLineEdit, QMainWindow, QWidget
 import qtawesome as qta
-import sqlite3
+from db import Database
 import os
 import re
 
 static = os.path.join(os.path.split(__file__)[0],'static')
 cwd = os.path.split(__file__)[0]
-
-class Database():
-    def __init__(self):
-        self.conn = sqlite3.Connection(os.path.join(cwd,'users.sqlite3'))
-        self.cur = self.conn.cursor()
-
-    def createRow(self,firstname,lastname,username,email,password):
-        self.cur.execute("""INSERT INTO users(firstname,lastname,username,email,password)"
-                values(?,?,?,?,?)""",(firstname,lastname,username,email,password))
-
-        self.conn.commit()
-        self.cur.close()
-        self.conn.close()
 
 
 class SignUp(QMainWindow):
@@ -32,7 +20,7 @@ class SignUp(QMainWindow):
     def setupUi(self):
         self.setObjectName("MainWindow")
         self.resize(400, 600)
-        self.setWindowFlag( QtCore.Qt.FramelessWindowHint)
+        self.setWindowFlags( QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
         self.centralwidget = QtWidgets.QWidget(self)
@@ -207,6 +195,7 @@ class SignUp(QMainWindow):
         self.username.setFont(font)
         self.username.setMaxLength(20)
         self.username.setObjectName("username")
+        self.username.textChanged.connect(lambda: self.ValidateUsername())
 
         self.verticalLayout_2.addWidget(self.username)
 
@@ -295,6 +284,26 @@ class SignUp(QMainWindow):
         self.initPosition = self.pos()
         self.show()
 
+    def ValidateUsername(self):
+        username = self.username.text()
+        username = username.rstrip()
+
+        database = Database()
+        users = database.UserValidation(username)
+
+        if len(self.username.actions()) > 1:self.username.removeAction(self.username.actions()[1])
+
+        if users:
+            if len(username) > 0:
+                self.username.addAction(qta.icon("mdi.close-circle-outline",color=self.invalid_color),QLineEdit.TrailingPosition)
+        
+        else:
+            self.username.addAction(qta.icon("fa5s.check",color=self.valid_color),QLineEdit.TrailingPosition)
+            self.validUsername = True
+            return 
+
+        self.validUsername = False
+
     def validateEmail(self):
         email = self.email.text()
         email_format = re.search(r'[\w.%_]{1,20}@\w{2,20}\.[a-zA-Z]{2,3}',str(email))
@@ -307,7 +316,7 @@ class SignUp(QMainWindow):
             return
         else:
             if len(email):
-                self.email.addAction(qta.icon("mdi.close",color=self.invalid_color),QLineEdit.TrailingPosition)
+                self.email.addAction(qta.icon("mdi.close-circle-outline",color=self.invalid_color),QLineEdit.TrailingPosition)
 
         self.validEmail = False
 
@@ -326,12 +335,12 @@ class SignUp(QMainWindow):
                 self.validPassword = True
                 return
             elif len(password2) > 0:
-                self.password2.addAction(qta.icon("mdi.close",color=self.invalid_color),QLineEdit.TrailingPosition)
+                self.password2.addAction(qta.icon("mdi.close-circle-outline",color=self.invalid_color),QLineEdit.TrailingPosition)
         else:
             if len(password1) > 0:
-                self.password1.addAction(qta.icon("mdi.close",color=self.invalid_color),QLineEdit.TrailingPosition)
+                self.password1.addAction(qta.icon("mdi.close-circle-outline",color=self.invalid_color),QLineEdit.TrailingPosition)
             if len(password2) > 0:
-                self.password2.addAction(qta.icon("mdi.close",color=self.invalid_color),QLineEdit.TrailingPosition)
+                self.password2.addAction(qta.icon("mdi.close-circle-outline",color=self.invalid_color),QLineEdit.TrailingPosition)
 
         self.validPassword = False
 
@@ -345,10 +354,9 @@ class SignUp(QMainWindow):
 
         text_format = re.search('.+',first_name and last_name and username)
 
-        if text_format and self.validEmail and self.validPassword:
+        if text_format and self.validEmail and self.validPassword and self.validUsername:
             database = Database()
-            database.createRow(first_name,last_name,username,email,password1)
-            print('good')
+            database.createUser(first_name,last_name,username,email,password1)
         
             self.first_name.setText('')
             self.last_name.setText('')

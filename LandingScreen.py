@@ -3,9 +3,12 @@ from PyQt5.QtWidgets import QLineEdit, QMainWindow
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QDesktopServices as browser
 import qtawesome as qta
+from db import Database
+import SignUpGui
 import os
 
 static = os.path.join(os.path.split(__file__)[0],'static')
+cwd = os.path.split(__file__)[0]
 
 class LandingWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -134,6 +137,8 @@ class LoginWindow(QMainWindow):
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.resize(400, 560)
+
+        
         self.centralwidget = QtWidgets.QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
         
@@ -240,10 +245,11 @@ class LoginWindow(QMainWindow):
         self.login.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.login.setAutoFillBackground(False)
         self.login.setObjectName("login")
+        self.login.clicked.connect(lambda: self.userLogin())
 
         self.signup = QtWidgets.QPushButton(self.footer_frame)
         self.signup.setIcon(qta.icon("fa.user-plus",options=options))
-        self.signup.setGeometry(QtCore.QRect(130, 0, 135, 30))
+        self.signup.setGeometry(QtCore.QRect(170, 0, 100, 30))
         font = QtGui.QFont()
         font.setFamily("Arial Narrow")
         font.setPointSize(10)
@@ -254,6 +260,7 @@ class LoginWindow(QMainWindow):
         self.signup.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.signup.setAutoFillBackground(False)
         self.signup.setObjectName("signup")
+        self.signup.clicked.connect(lambda: self.signUpWindow())
 
         self.sociaIs_frame = QtWidgets.QFrame(self.footer_frame)
         self.sociaIs_frame.setGeometry(QtCore.QRect(225, 120, 138, 45))
@@ -322,6 +329,21 @@ class LoginWindow(QMainWindow):
     def openTwitter(self, event):
             browser.openUrl(QtCore.QUrl("https://www.twitter.com"))
 
+    def signUpWindow(self):
+        SignUpGui.SignUp()
+        self.hide()
+
+    def userLogin(self):
+        username = self.usernameEntry.text()
+        password = self.passwordEntry.text()
+
+        db = Database()
+        validation = db.validateUser(username,password)
+        if validation:
+            print("successful")
+        
+        else:
+            print("Incorrect username or password")
 
     def mousePressEvent(self, event):
         self.initPosition = event.globalPos()
@@ -340,7 +362,7 @@ class LoginWindow(QMainWindow):
         self.passwordEntry.setPlaceholderText(_translate("MainWindow", "Password"))
         self.rememberMe.setText(_translate("MainWindow", "Remember Me"))
         self.login.setText(_translate("MainWindow", "LogIn"))
-        self.signup.setText(_translate("MainWindow", "Create New Account "))
+        self.signup.setText(_translate("MainWindow", "Signup "))
 
 if __name__ == "__main__":
     import sys
