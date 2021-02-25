@@ -1,4 +1,3 @@
-from sqlite3.dbapi2 import OperationalError
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLineEdit, QMainWindow, QWidget
 import qtawesome as qta

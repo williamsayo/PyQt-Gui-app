@@ -5,7 +5,7 @@ import os
 cwd = os.path.split(__file__)[0]
 
 media = os.path.join(os.path.split(__file__)[0],"media/profile_pics")
-media = os.path.join(media,"default.jpg")
+default_img = os.path.join(media,"default1.png")
 
 class Database():
     def __init__(self):
