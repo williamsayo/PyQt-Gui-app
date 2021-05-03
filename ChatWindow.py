@@ -1,22 +1,82 @@
-from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLabel, QLineEdit, QMainWindow, QSizePolicy, QWidget
+from PyQt5.QtWidgets import QMainWindow, QMenu, QSizePolicy, QSystemTrayIcon
 from PyQt5 import QtCore, QtGui, QtWidgets
 import qtawesome as qta
 import os
+import socket
+import threading
+from random import randrange
+from win10toast import ToastNotifier
 
 static = os.path.join(os.path.split(__file__)[0],'static')
 cwd = os.path.split(__file__)[0]
 media = os.path.join(cwd,'media')
 
+host = socket.gethostbyname(socket.gethostname())
+port = 2424
+
+username = input("Enter a username for the chatroom: ")
+time = QtCore.QDateTime.currentDateTime().toString("h:mm ap")
+
+class ThreadClass(QtCore.QThread):
+    any_signal = QtCore.pyqtSignal(str)
+    def __init__(self, parent=None,info=''):
+        super(ThreadClass,self).__init__(parent)
+        self.info = info
+        self.is_running = True
+
+    def run(self):
+        self.any_signal.emit(self.info)
+
 class ChatScreen(QMainWindow):
-    def __init__(self):
+
+    def __init__(self,host,port,username):
         super(ChatScreen,self).__init__()
         self.setupUi()
+        self.systemTray()
+        self.username = username
+        self.client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.client.connect((host,port))
+        self.notifier = ToastNotifier()
+
+        t1 = threading.Thread(target=self.receive_message)
+        t1.start()
+
+    def receive_message(self):
+        while True:
+            try:
+                message = self.client.recv(1024).decode('utf-8') 
+                if message == 'username':
+                    self.client.send(self.username.encode('utf-8'))
+                else:
+                    self.thread = ThreadClass(parent=None,info=message)
+                    self.thread.start()
+                    self.thread.any_signal.connect(self.receiveMessage)
+        
+            except:
+                self.client.close()
+                print( f'You have left the chatroom!')
+                break
+
+    def systemTray(self):
+        self.trayIcon = QSystemTrayIcon(QtGui.QIcon(os.path.join(static,'images/conversation_icon.ico')),parent=self)
+        self.trayIcon.setToolTip("Quickchat messenger")
+        self.trayIcon.messageClicked.connect(self.showNormal)
+
+        self.trayIcon.show()
+
+        self.menu = QMenu()
+        openAction = self.menu.addAction(qta.icon("fa5.smile-wink"),"Quickchat messenger")
+        openAction.triggered.connect(self.showNormal)
+        exitAction = self.menu.addAction(qta.icon("mdi.exit-run"),"Exit")
+        exitAction.triggered.connect(self.closeWindow)
+
+        self.trayIcon.setContextMenu(self.menu)
 
     def setupUi(self):
         white = "#fff"
         self.setObjectName("MainWindow")
         self.resize(866, 568)
-        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
         self.centralwidget = QtWidgets.QWidget(self)
@@ -72,7 +132,7 @@ class ChatScreen(QMainWindow):
         self.closeBtn.setMaximumSize(QtCore.QSize(15, 15))
         self.closeBtn.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.closeBtn.setObjectName("closeBtn")
-        self.closeBtn.clicked.connect(lambda : self.close())
+        self.closeBtn.clicked.connect(lambda : self.closeWindow())
 
         self.horizontalLayout_5.addWidget(self.closeBtn)
         self.horizontalLayout_4.addWidget(self.closeFrame, 0, QtCore.Qt.AlignRight)
@@ -107,6 +167,7 @@ class ChatScreen(QMainWindow):
         self.leaveBtn.setIcon(qta.icon("mdi.exit-run",color=white))
         self.leaveBtn.setMinimumSize(QtCore.QSize(120, 30))
         self.leaveBtn.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.leaveBtn.clicked.connect(lambda: self.closeWindow())
         self.leaveBtn.setObjectName("leaveBtn")
 
         self.horizontalLayout_2.addWidget(self.leaveBtn, 0, QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
@@ -255,17 +316,31 @@ class ChatScreen(QMainWindow):
 
         self.bodyLayout.addWidget(self.side_bar)
 
-        self.chatScreen = QtWidgets.QFrame(self.bodyContainer)
+        self.chatScreen = QtWidgets.QScrollArea(self.bodyContainer)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.chatScreen.sizePolicy().hasHeightForWidth())
+        self.chatScreen.setSizePolicy(sizePolicy)
         self.chatScreen.setMinimumSize(QtCore.QSize(500, 0))
-        self.chatScreen.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.chatScreen.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.chatScreen.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.chatScreen.setWidgetResizable(True)
+        self.chatScreen.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
+
+        self.chatScreen.setMinimumSize(QtCore.QSize(500, 0))
+        self.chatScreen.setFrameShape(QtWidgets.QFrame.Panel)
+        self.chatScreen.setFrameShadow(QtWidgets.QFrame.Plain)
         self.chatScreen.setObjectName("chatScreen")
 
-        self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.chatScreen)
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 1076, 638))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+
+        self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_6.setSpacing(10)
         self.verticalLayout_6.setObjectName("verticalLayout_6")
 
-        self.chatsFrame = QtWidgets.QFrame(self.chatScreen)
+        self.chatsFrame = QtWidgets.QFrame(self.scrollAreaWidgetContents)
         self.chatsFrame.setMinimumSize(QtCore.QSize(0, 50))
         self.chatsFrame.setBaseSize(QtCore.QSize(600, 50))
         self.chatsFrame.setFrameShape(QtWidgets.QFrame.NoFrame)
@@ -334,6 +409,7 @@ class ChatScreen(QMainWindow):
 
         self.verticalLayout_6.addWidget(self.chatsFrame, 0, QtCore.Qt.AlignTop)
 
+        self.chatScreen.setWidget(self.scrollAreaWidgetContents)
         self.bodyLayout.addWidget(self.chatScreen)
 
         self.verticalLayout_3.addWidget(self.bodyContainer)
@@ -365,7 +441,8 @@ class ChatScreen(QMainWindow):
         self.messageEntry.setMaximumSize(QtCore.QSize(16777215, 35))
         validator = QtGui.QRegExpValidator(QtCore.QRegExp(".+"))
         self.messageEntry.setValidator(validator)
-        self.messageEntry.returnPressed.connect(lambda:self.sendMessage(self.messageEntry.text()))
+        self.messageEntry.returnPressed.connect(lambda:self.sendMessage())
+        self.messageEntry.setPlaceholderText("Type a message")
         self.messageEntry.setObjectName("messageEntry")
 
         self.horizontalLayout.addWidget(self.messageEntry)
@@ -376,7 +453,7 @@ class ChatScreen(QMainWindow):
         self.sendBtn.setMinimumSize(QtCore.QSize(35, 35))
         self.sendBtn.setMaximumSize(QtCore.QSize(35, 35))
         self.sendBtn.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.sendBtn.clicked.connect(lambda:self.sendMessage(self.messageEntry.text()))
+        self.sendBtn.clicked.connect(lambda:self.sendMessage())
         self.sendBtn.setObjectName("sendBtn")
 
         self.horizontalLayout.addWidget(self.sendBtn)
@@ -396,21 +473,100 @@ class ChatScreen(QMainWindow):
         self.initPosition = self.pos()
         self.show()
 
-    # def keyPressEvent(self, event):
-    #     if event.key() == 16777220:
-    #         if self.messageEntry.hasFocus() and len(self.messageEntry.text()) > 0:
-                
-    #             self.sendMessage()
+    def receiveMessage(self,received_message):
+        time = QtCore.QDateTime.currentDateTime().toString("h:mm ap")
+        
+        if received_message.find(':') >= 0:
+            message = received_message.split(':')[1]
+            sender = "%s %s"%(received_message.split(":")[0].upper(),time)
+        
+        else:
+            message = received_message
+            sender = "QuickChat Bot %s"%(time)
 
-    def sendMessage(self, text):
+        self.receivedMessageContainer = QtWidgets.QFrame(self.chatsFrame)
+        self.receivedMessageContainer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.receivedMessageContainer.setBaseSize(QtCore.QSize(200, 100))
+        self.receivedMessageContainer.setMinimumSize(QtCore.QSize(100, 50))
+        self.receivedMessageContainer.setMaximumSize(QtCore.QSize(1500, 1657750))
+        self.receivedMessageContainer.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.receivedMessageContainer.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.receivedMessageContainer.setObjectName("receivedMessageContainer")
 
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout(self.receivedMessageContainer)
+        self.horizontalLayout_3.setContentsMargins(5, 2, 0, 2)
+        self.horizontalLayout_3.setSpacing(10)
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+
+        self.profilePic = QtWidgets.QLabel(self.receivedMessageContainer)
+        self.profilePic.setMinimumSize(QtCore.QSize(40, 35))
+        self.profilePic.setMaximumSize(QtCore.QSize(40, 35))
+        self.profilePic.setObjectName("profilePic")
+
+        self.horizontalLayout_3.addWidget(self.profilePic)
+
+        self.receivedFrame = QtWidgets.QFrame(self.receivedMessageContainer)
+        self.receivedFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.receivedFrame.setMinimumSize(QtCore.QSize(100, 50))
+        self.receivedFrame.setMaximumSize(QtCore.QSize(600, 1657750))
+        self.receivedFrame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.receivedFrame.setObjectName("receivedFrame")
+
+        self.verticalLayout_8 = QtWidgets.QVBoxLayout(self.receivedFrame)
+        self.verticalLayout_8.setContentsMargins(25, 2, 25, 2)
+        self.verticalLayout_8.setSpacing(1)
+        self.verticalLayout_8.setObjectName("verticalLayout_8")
+
+        self.sender = QtWidgets.QLabel(self.receivedFrame)
+        self.sender.setMinimumSize(QtCore.QSize(0, 20))
+        self.sender.setObjectName("sender")
+        self.sender.setText(sender)
+
+        self.verticalLayout_8.addWidget(self.sender)
+
+        self.receivedMessage = QtWidgets.QLabel(self.receivedFrame)
+        self.receivedMessage.setMinimumSize(QtCore.QSize(0, 20))
+        self.receivedMessage.setWordWrap(True)
+        self.receivedMessage.setSizeIncrement(QtCore.QSize(200, 500))
+        self.receivedMessage.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.receivedMessage.adjustSize()
+        font = QtGui.QFont()
+        font = QtGui.QFont()
+        font.setFamily("Segoe UI")
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.receivedMessage.setFont(font)
+        self.receivedMessage.setObjectName("message")
+        self.receivedMessage.setText(message)
+
+        self.verticalLayout_8.addWidget(self.receivedMessage)
+
+        self.horizontalLayout_3.addWidget(self.receivedFrame)
+
+        self.chatsFrame_layout.addWidget(self.receivedMessageContainer,0,QtCore.Qt.AlignLeft)
+
+        self.verticalLayout_6.addWidget(self.chatsFrame, 0, QtCore.Qt.AlignTop)
+
+        vScroll = self.chatScreen.verticalScrollBar()
+        vScroll.setValue(vScroll.maximum()+66)
+
+        if self.isMinimized():
+            self.trayIcon.showMessage(sender.split(' ')[0],message,QtGui.QIcon(os.path.join(static,'images/chat.png')),5000)
+
+    def sendMessage(self):
         message = self.messageEntry.text()
+        client_message = f'{self.username}: {message}'.encode('utf-8')
+        self.client.send(client_message)
+
+        time = QtCore.QDateTime.currentDateTime().toString("h:mm ap")
         self.messageEntry.setText("")
 
         self.sentMessageContainer = QtWidgets.QFrame(self.chatsFrame)
+        self.sentMessageContainer.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed)
         self.sentMessageContainer.setMinimumSize(QtCore.QSize(100, 50))
         self.sentMessageContainer.setMaximumSize(QtCore.QSize(600, 1657750))
-        self.sentMessageContainer.setSizeIncrement(QSizePolicy.Expanding,QSizePolicy.Expanding)
+        self.sentMessageContainer.setSizeIncrement(QSizePolicy.Preferred,QSizePolicy.Preferred)
         self.sentMessageContainer.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.sentMessageContainer.setFrameShadow(QtWidgets.QFrame.Raised)
         self.sentMessageContainer.setObjectName("sentMessageContainer")
@@ -422,7 +578,7 @@ class ChatScreen(QMainWindow):
 
         self.sentFrame = QtWidgets.QFrame(self.sentMessageContainer)
         self.sentFrame.setMinimumSize(QtCore.QSize(100, 50))
-        self.sentFrame.setSizeIncrement(QSizePolicy.Expanding,QSizePolicy.Expanding)
+        self.sentFrame.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
         self.sentFrame.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.sentFrame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.sentFrame.setObjectName("sentFrame")
@@ -433,18 +589,20 @@ class ChatScreen(QMainWindow):
         self.verticalLayout_8.setObjectName("verticalLayout_8")
 
         self.sender = QtWidgets.QLabel(self.sentFrame)
+        self.sender.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.sender.setMinimumSize(QtCore.QSize(0, 20))
-        self.sender.setText("You 2:18 am")
+        self.sender.setMaximumSize(QtCore.QSize(80, 20))
+        self.sender.setText("You %s"%(time))
         self.sender.setObjectName("sender")
 
-        self.verticalLayout_8.addWidget(self.sender)
+        self.verticalLayout_8.insertWidget(0,self.sender)
 
         self.sentMessage = QtWidgets.QLabel(self.sentFrame)
         self.sentMessage.setText(message)
         self.sentMessage.setAlignment(QtCore.Qt.AlignLeft)
         self.sentMessage.setIndent(True)
         self.sentMessage.setWordWrap(True)
-        self.sentMessage.setSizeIncrement(QSizePolicy.Expanding,QSizePolicy.Expanding)
+        self.sentMessage.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.sentMessage.adjustSize()
         font = QtGui.QFont()
         font.setFamily("Segoe UI")
@@ -454,18 +612,25 @@ class ChatScreen(QMainWindow):
         self.sentMessage.setFont(font)
         self.sentMessage.setObjectName("sentMessage")
 
-        self.verticalLayout_8.addWidget(self.sentMessage)
+        self.verticalLayout_8.insertWidget(1,self.sentMessage)
 
-        self.horizontalLayout_3.addWidget(self.sentFrame)
+        self.horizontalLayout_3.insertWidget(0,self.sentFrame)
 
         self.profilePic = QtWidgets.QLabel(self.sentMessageContainer)
         self.profilePic.setMinimumSize(QtCore.QSize(40, 35))
         self.profilePic.setMaximumSize(QtCore.QSize(40, 35))
         self.profilePic.setObjectName("profilePic")
 
-        self.horizontalLayout_3.addWidget(self.profilePic)
+        self.horizontalLayout_3.insertWidget(1,self.profilePic)
 
-        self.chatsFrame_layout.addWidget(self.sentMessageContainer ,1, QtCore.Qt.AlignRight)
+        self.chatsFrame_layout.insertWidget(-1,self.sentMessageContainer ,0, QtCore.Qt.AlignRight)
+
+        vScroll = self.chatScreen.verticalScrollBar()
+        vScroll.setValue(vScroll.maximum()+66)
+
+    def closeWindow(self):
+        self.client.close()
+        self.close()
 
     def maximizeFunc(self):
         if self.isMaximized():
@@ -490,13 +655,15 @@ class ChatScreen(QMainWindow):
         self.room.setText(_translate("MainWindow", "General"))
         self.usersTitle.setText(_translate("MainWindow", "Users"))
         self.user.setText(_translate("MainWindow", "somebody"))
-        self.sender.setText(_translate("MainWindow", "QuickChat Bot 2:50 pm"))
-        self.receivedMessage.setText(_translate("MainWindow", "Hello everyone"))
+        self.sender.setText(_translate("MainWindow", "QuickChat Bot %s"%(time)))
+        self.receivedMessage.setText(_translate("MainWindow", "Hello %s"%(username)))
 
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-    ui = ChatScreen()
+    if username == "":
+        username = socket.gethostname() + str(randrange(1,100))
+    ui = ChatScreen(host,port,username)
     sys.exit(app.exec_())

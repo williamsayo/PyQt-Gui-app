@@ -293,8 +293,7 @@ class SignUp(QMainWindow):
         if len(self.username.actions()) > 1:self.username.removeAction(self.username.actions()[1])
 
         if users:
-            if len(username) > 0:
-                self.username.addAction(qta.icon("mdi.close-circle-outline",color=self.invalid_color),QLineEdit.TrailingPosition)
+            self.username.addAction(qta.icon("mdi.close-circle-outline",color=self.invalid_color),QLineEdit.TrailingPosition)
         
         else:
             self.username.addAction(qta.icon("fa5s.check",color=self.valid_color),QLineEdit.TrailingPosition)

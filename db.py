@@ -1,5 +1,6 @@
-from sqlite3.dbapi2 import OperationalError
-import sqlite3
+from sqlite3.dbapi2 import Cursor
+import psycopg2
+import psycopg2.extras
 import os
 
 cwd = os.path.split(__file__)[0]
@@ -9,21 +10,25 @@ default_img = os.path.join(media,"default1.png")
 
 class Database():
     def __init__(self):
-        self.conn = sqlite3.Connection(os.path.join(cwd,'users.sqlite3'))
-        self.conn.execute("PRAGMA foreign_keys = 1")
-        self.cur = self.conn.cursor()        
+        self.conn = psycopg2.connect(
+            database="testdb",
+            user="test",
+            password="test123"
+        )
+
+        self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)        
 
     def createUser(self,firstname,lastname,username,email,password):
 
-        self.cur.execute("""CREATE TABLE IF NOT EXISTS users (user_id integer primary key,
+        self.cur.execute("""CREATE TABLE IF NOT EXISTS users (user_id SERIAL primary key,
             first_name varchar(20),
             last_name varchar(20),
-            # username varchar(20) unique,
+            username varchar(20) unique,
             email varchar(50),
             password varchar(25))""")
 
         self.cur.execute("""INSERT INTO users(first_name,last_name,username,email,password)
-                values(?,?,?,?,?)""",(firstname,lastname,username,email,password))
+                values(%s,%s,%s,%s,%s)""",(firstname,lastname,username,email,password))
 
         self.createProfile(username)
 
@@ -33,20 +38,19 @@ class Database():
 
     def createProfile(self,username):
 
-        with open(media,"rb") as image:
+        with open(default_img,"rb") as image:
             default_image = image.read()
 
-        self.cur.execute("""CREATE TABLE IF NOT EXISTS Profile (profile_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        self.cur.execute("""CREATE TABLE IF NOT EXISTS Profile (profile_id SERIAL PRIMARY KEY,
             username varchar(20) UNIQUE,
-            profile_pic BLOB not null,
+            profile_pic bytea not null,
             FOREIGN KEY (profile_id) REFERENCES users(user_id))""")
 
-        self.cur.execute("""INSERT INTO users(username,profile_pic)
-            values(?,?)""",(username,default_image))
+        self.cur.execute("""INSERT INTO Profile(username,profile_pic)
+            values(%s,%s)""",(username,default_image))
  
     def validateUser(self,username,password):
-        self.cur.execute(f""" SELECT username,password FROM users WHERE
-            EXISTS(SELECT * FROM users WHERE username = '{username}' OR email='{username}')""")
+        self.cur.execute(f""" SELECT username,password FROM users WHERE username=%s OR email=%s """,(username,username))
 
         user = self.cur.fetchone()
 
@@ -60,19 +64,21 @@ class Database():
         return False
 
     def UserValidation(self,username):
-        try:
-            self.cur.execute(f""" SELECT EXISTS(SELECT username FROM users WHERE username = '{username}')""")
+        self.cur.execute("""CREATE TABLE IF NOT EXISTS users (user_id SERIAL primary key,
+        first_name varchar(20),
+        last_name varchar(20),
+        username varchar(20) unique,
+        email varchar(50),
+        password varchar(25))""")
 
-            usernames = self.cur.fetchone()[0]
+        self.cur.execute(f""" SELECT username FROM users WHERE username=%s """,(username,))
 
-            self.conn.commit()
-            self.cur.close()
-            self.conn.close()
+        usernames = self.cur.fetchone()
 
-            if usernames == 1:
-                return True
-            
-            return False
+        self.cur.close()
+        self.conn.close()
 
-        except OperationalError:
-            return False
+        if usernames:
+            return True
+        
+        return False
