@@ -1,3 +1,4 @@
 /__pycache__
 *.ui
 *.jpg
+chatwindow(scrollable).py
